@@ -1,0 +1,51 @@
+##Import and clean data##
+getwd()
+df = read.table("gauge.txt", header=TRUE) #Load a text file
+dim(df) #How much data
+len=dim(df)[1]
+head(df) #Peak at data
+
+#Replace any99 values
+df[df==99] = NA
+#Remove  all columns with NA
+df = na.omit(df) #Returns the dataframe object with all rows containing NA removed
+#Check what's changed
+dim(df)
+
+
+## Pre Regression ##
+#"plot" expects the explanatory/independent variable in the first column. We need to switch our explanatory variable "gain" to the first column.
+dft = subset(df,select=c(2,1))
+dfb = subset(df,select=c(2,1))
+
+#Next we also need to transform our gain by passing it through a log
+dft[,1] = log(dft[,1])
+#Use the inline tool to plot
+plot(dft)
+plot(df)
+
+## Regression ##
+#Running the "lm" function generates a list of parameters for a line: intercept and slope
+#The first input argument "formula" can be supplied with the "~" shorthand and indicates response~explanatory variables
+fit = lm(formula=density~gain, data=dft)
+#The output object has many hidden propoerties: most importantly has an intercept B0 and a scalar B1 of the independent x variable
+#This lets us construct and plot a linear model that predicts y_hat slope using B0 intercept and B1 slope
+plot(dft, main = "Least Squares fit to Logarithm of Gain", xlab = "Receiver Gain (log(keV))", ylab = "Calibration Foam Densities (g/cm^3)")
+# xaxt='n', yaxt='n', asp=1, ylim = c(0,15),
+#axis(side=1, at=seq(from=0,to = 230000, by = 23000)))
+abline(fit, col="red")
+
+fitb = lm(formula=density~gain, data=dfb)
+plot(dfb, main = "Least Squares fit to Gain", xlab = "Receiver Gain (keV)", ylab = "Calibration Foam Densities (g/cm^3)")
+abline(fitb, col="red")
+
+
+## Diagnostics/Verification of Model ##
+#To check for linearity we observe the scatter plot above
+#To check that residuals are normal we plot a histogram(standard) and QQ line (better but harder to interpret)
+hist(fit$residuals)
+qqnorm(fit$residuals)#one of the hidden outputs of the lm() function is a calculation of each residual
+qqline(fit$residuals, col="red")
+#To check for homoscedasticity/constant data variability we observe the residual plot
+plot(fit$residuals, main = "Residuals of Log Least Squares", xlab = "Sampled Data Points", ylab = "Residual") #one of the hidden outputs of the lm() function is a calculation of each residual
+abline(0, 0, col="red")
